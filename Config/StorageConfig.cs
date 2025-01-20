@@ -19,9 +19,9 @@ namespace Cosmos.BlobService.Config
         /// </summary>
         public StorageConfig()
         {
-            AmazonConfigs = new List<AmazonStorageConfig>();
-            AzureConfigs = new List<AzureStorageConfig>();
-            GoogleConfigs = new List<GoogleStorageConfig>();
+            this.AmazonConfigs = new List<AmazonStorageConfig>();
+            this.AzureConfigs = new List<AzureStorageConfig>();
+            this.GoogleConfigs = new List<GoogleStorageConfig>();
         }
 
         /// <summary>

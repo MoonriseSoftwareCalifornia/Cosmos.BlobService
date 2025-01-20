@@ -51,14 +51,14 @@ namespace Cosmos.BlobService.Drivers
 
             if (conpartsDict["AccountKey"] == "AccessToken")
             {
-                usesAzureDefaultCredential = true;
+                this.usesAzureDefaultCredential = true;
                 var accountName = conpartsDict["AccountName"];
-                blobServiceClient = new BlobServiceClient(new Uri($"https://{accountName}.blob.core.windows.net/"), defaultAzureCredential);
+                this.blobServiceClient = new BlobServiceClient(new Uri($"https://{accountName}.blob.core.windows.net/"), defaultAzureCredential);
             }
             else
             {
-                usesAzureDefaultCredential = false;
-                blobServiceClient = new BlobServiceClient(config.AzureBlobStorageConnectionString);
+                this.usesAzureDefaultCredential = false;
+                this.blobServiceClient = new BlobServiceClient(config.AzureBlobStorageConnectionString);
             }
         }
 
@@ -68,7 +68,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns the number of bytes consumed for the container as a <see cref="long"/>.</returns>
         public async Task<long> GetBytesConsumed()
         {
-            var container = blobServiceClient.GetBlobContainerClient(containerName);
+            var container = this.blobServiceClient.GetBlobContainerClient(this.containerName);
             long bytesConsumed = 0;
             var blobs = container.GetBlobsAsync().AsPages();
 
@@ -92,7 +92,7 @@ namespace Cosmos.BlobService.Drivers
         /// </remarks>
         public async Task AppendBlobAsync(byte[] data, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime)
         {
-            var appendClient = GetAppendBlobClient(fileMetaData.RelativePath);
+            var appendClient = this.GetAppendBlobClient(fileMetaData.RelativePath);
 
             if (fileMetaData.ChunkIndex == 0)
             {
@@ -149,7 +149,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns a <see cref="bool"/> indicating it exists or not.</returns>
         public async Task<bool> BlobExistsAsync(string path)
         {
-            var blob = await GetBlobAsync(path);
+            var blob = await this.GetBlobAsync(path);
 
             return await blob.ExistsAsync();
         }
@@ -169,7 +169,7 @@ namespace Cosmos.BlobService.Drivers
             destination = destination.TrimStart('/');
 
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
             var sourceBlob = containerClient.GetBlobClient(source);
             if (await sourceBlob.ExistsAsync())
             {
@@ -209,7 +209,7 @@ namespace Cosmos.BlobService.Drivers
             // Don't lead with "/" with S3
             var fullPath = Utilities.GetBlobName(path, "folder.stubxx").TrimStart('/');
 
-            var blobClient = await GetBlobAsync(fullPath);
+            var blobClient = await this.GetBlobAsync(fullPath);
 
             if (!await blobClient.ExistsAsync())
             {
@@ -228,7 +228,7 @@ namespace Cosmos.BlobService.Drivers
         public async Task<List<string>> GetBlobNamesByPath(string path, string[] filter = null)
         {
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             var pageable = containerClient.GetBlobsAsync(prefix: path).AsPages();
 
@@ -248,9 +248,9 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns the number of deleted obhects as an <see cref="int"/>.</returns>
         public async Task<int> DeleteFolderAsync(string path)
         {
-            var blobs = await GetBlobItemsByPath(path);
+            var blobs = await this.GetBlobItemsByPath(path);
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             var responses = new List<Response<bool>>();
 
@@ -269,7 +269,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task DeleteIfExistsAsync(string path)
         {
-            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
             await containerClient.DeleteBlobIfExistsAsync(path, DeleteSnapshotsOption.IncludeSnapshots);
         }
 
@@ -279,17 +279,17 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task EnableStaticWebsite()
         {
-            if (usesAzureDefaultCredential)
+            if (this.usesAzureDefaultCredential)
             {
                 return; // Not able to enable static website when using Azure Default Credential.
             }
 
-            BlobServiceProperties properties = await blobServiceClient.GetPropertiesAsync();
+            BlobServiceProperties properties = await this.blobServiceClient.GetPropertiesAsync();
 
             if (!properties.StaticWebsite.Enabled)
             {
                 properties.StaticWebsite.Enabled = true;
-                await blobServiceClient.SetPropertiesAsync(properties);
+                await this.blobServiceClient.SetPropertiesAsync(properties);
             }
 
             if (properties.Cors == null || properties.Cors.Count == 0)
@@ -302,7 +302,7 @@ namespace Cosmos.BlobService.Drivers
                     ExposedHeaders = "*"
                 };
                 properties.Cors = new List<BlobCorsRule>() { corsRule };
-                await blobServiceClient.SetPropertiesAsync(properties);
+                await this.blobServiceClient.SetPropertiesAsync(properties);
             }
         }
 
@@ -312,12 +312,12 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/>.</returns>
         public async Task DisableStaticWebsite()
         {
-            BlobServiceProperties properties = await blobServiceClient.GetPropertiesAsync();
+            BlobServiceProperties properties = await this.blobServiceClient.GetPropertiesAsync();
 
             if (properties.StaticWebsite.Enabled)
             {
                 properties.StaticWebsite.Enabled = false;
-                await blobServiceClient.SetPropertiesAsync(properties);
+                await this.blobServiceClient.SetPropertiesAsync(properties);
             }
         }
 
@@ -335,7 +335,7 @@ namespace Cosmos.BlobService.Drivers
 
             path = path.TrimStart('/');
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             if (await containerClient.ExistsAsync())
             {
@@ -354,7 +354,7 @@ namespace Cosmos.BlobService.Drivers
         {
             var results = new List<BlobItem>();
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
             var items = containerClient.GetBlobsAsync(prefix: path);
 
             await foreach (var item in items)
@@ -372,7 +372,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Returns metadata as a <see cref="FileMetadata"/>.</returns>
         public async Task<FileMetadata> GetFileMetadataAsync(string path)
         {
-            var blobClient = await GetBlobAsync(path);
+            var blobClient = await this.GetBlobAsync(path);
             var properties = await blobClient.GetPropertiesAsync();
             _ = long.TryParse(properties.Value.Metadata["ccmsuploaduid"], out var mark);
             return new FileMetadata()
@@ -409,7 +409,7 @@ namespace Cosmos.BlobService.Drivers
                 path = path.TrimStart('/');
             }
 
-            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             var resultSegment = containerClient.GetBlobsByHierarchyAsync(prefix: path, delimiter: "/").AsPages();
             var results = new List<BlobHierarchyItem>();
@@ -429,7 +429,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>BlobItem list.</returns>
         public async Task<List<BlobItem>> GetBlobItemsAsync(string path)
         {
-            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+            var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
             var resultSegment = containerClient.GetBlobsAsync(prefix: path).AsPages();
             var results = new List<BlobItem>();
 
@@ -449,7 +449,7 @@ namespace Cosmos.BlobService.Drivers
         public async Task<Stream> GetStreamAsync(string path)
         {
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             var blobClient = containerClient.GetAppendBlobClient(path);
 
@@ -465,7 +465,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>Indicates success as a <see cref="bool"/>.</returns>
         public async Task<bool> UploadStreamAsync(Stream readStream, FileUploadMetaData fileMetaData, DateTimeOffset uploadDateTime)
         {
-            var appendClient = GetAppendBlobClient(fileMetaData.RelativePath);
+            var appendClient = this.GetAppendBlobClient(fileMetaData.RelativePath);
 
             var headers = new BlobHttpHeaders
             {
@@ -496,7 +496,7 @@ namespace Cosmos.BlobService.Drivers
         public AppendBlobClient GetAppendBlobClient(string path)
         {
             var containerClient =
-                blobServiceClient.GetBlobContainerClient(containerName);
+                this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             return containerClient.GetAppendBlobClient(path);
         }

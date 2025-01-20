@@ -32,8 +32,8 @@ namespace Cosmos.BlobService.Drivers
         /// <param name="fileShare">Azure storage fileshare name.</param>
         public AzureFileStorage(string connectionString, string fileShare)
         {
-            shareClient = new ShareClient(connectionString, fileShare);
-            _ = shareClient.CreateIfNotExistsAsync().Result;
+            this.shareClient = new ShareClient(connectionString, fileShare);
+            _ = this.shareClient.CreateIfNotExistsAsync().Result;
         }
 
         /// <inheritdoc/>
@@ -43,10 +43,10 @@ namespace Cosmos.BlobService.Drivers
             var dirName = Path.GetDirectoryName(fileMetaData.RelativePath);
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient(dirName);
+            var directory = this.shareClient.GetDirectoryClient(dirName);
             if (!await directory.ExistsAsync())
             {
-                await CreateFolderAsync(dirName); // Make sure the folder exists.
+                await this.CreateFolderAsync(dirName); // Make sure the folder exists.
             }
 
             // Get a reference to a file and upload it.
@@ -68,7 +68,7 @@ namespace Cosmos.BlobService.Drivers
             var dirName = Path.GetDirectoryName(path);
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient(dirName);
+            var directory = this.shareClient.GetDirectoryClient(dirName);
             if (!await directory.ExistsAsync())
             {
                 return false;
@@ -88,18 +88,18 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task RenameAsync(string path, string destination)
         {
-            var source = await GetObjectAsync(path);
+            var source = await this.GetObjectAsync(path);
 
             if (source.IsDirectory)
             {
-                var directory = shareClient.GetDirectoryClient(path);
+                var directory = this.shareClient.GetDirectoryClient(path);
                 await directory.RenameAsync(destination);
             }
             else
             {
                 path = Path.GetDirectoryName(path).Replace("\\", "/");
                 var fileName = Path.GetFileName(path);
-                var directory = shareClient.GetDirectoryClient(path);
+                var directory = this.shareClient.GetDirectoryClient(path);
                 var file = directory.GetFileClient(fileName);
                 await file.RenameAsync(destination);
             }
@@ -116,9 +116,9 @@ namespace Cosmos.BlobService.Drivers
                 throw new Exception("Source and destination cannot be the same.");
             }
 
-            var sourceItem = await GetObjectAsync(sourcePath);
-            var destinationItem = await GetObjectAsync(destDirectoryPath);
-            var root = shareClient.GetRootDirectoryClient();
+            var sourceItem = await this.GetObjectAsync(sourcePath);
+            var destinationItem = await this.GetObjectAsync(destDirectoryPath);
+            var root = this.shareClient.GetRootDirectoryClient();
 
             if (destinationItem == null || destinationItem.IsDirectory == false)
             {
@@ -128,7 +128,7 @@ namespace Cosmos.BlobService.Drivers
             if (sourceItem.IsDirectory)
             {
                 // Get everything that needs copying
-                var items = await GetBlobNamesByPath(sourcePath);
+                var items = await this.GetBlobNamesByPath(sourcePath);
 
                 foreach (var item in items)
                 {
@@ -141,7 +141,7 @@ namespace Cosmos.BlobService.Drivers
 
                     if (!destDirectoryPath.Equals(dir, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        await CreateFolderAsync(dir);
+                        await this.CreateFolderAsync(dir);
                     }
 
                     var destFile = root.GetFileClient(destPath);
@@ -158,7 +158,7 @@ namespace Cosmos.BlobService.Drivers
 
                 var dir = Path.GetDirectoryName(destPath).Replace("\\", "/");
 
-                await CreateFolderAsync(dir);
+                await this.CreateFolderAsync(dir);
 
                 var destFile = root.GetFileClient(destPath.TrimEnd('/') + "/" + sourceFile.Name);
 
@@ -175,9 +175,9 @@ namespace Cosmos.BlobService.Drivers
 
             var pathParts = target.Trim('/').Split('/').ToList();
 
-            var directory = shareClient.GetRootDirectoryClient();
+            var directory = this.shareClient.GetRootDirectoryClient();
 
-            await CreateSubDirectory(directory, pathParts);
+            await this.CreateSubDirectory(directory, pathParts);
         }
 
         /// <inheritdoc/>
@@ -189,11 +189,11 @@ namespace Cosmos.BlobService.Drivers
 
             if (string.IsNullOrEmpty(target))
             {
-                rootDir = shareClient.GetRootDirectoryClient();
+                rootDir = this.shareClient.GetRootDirectoryClient();
             }
             else
             {
-                rootDir = shareClient.GetDirectoryClient(target);
+                rootDir = this.shareClient.GetDirectoryClient(target);
             }
 
             if (await rootDir.ExistsAsync())
@@ -204,7 +204,7 @@ namespace Cosmos.BlobService.Drivers
                 {
                     if (item.IsDirectory)
                     {
-                        await DeleteAllAsync(rootDir.GetSubdirectoryClient(item.Name));
+                        await this.DeleteAllAsync(rootDir.GetSubdirectoryClient(item.Name));
                     }
                     else
                     {
@@ -232,7 +232,7 @@ namespace Cosmos.BlobService.Drivers
             path = path.TrimStart('/');
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetRootDirectoryClient();
+            var directory = this.shareClient.GetRootDirectoryClient();
 
             var file = directory.GetFileClient($"/{path}");
 
@@ -246,7 +246,7 @@ namespace Cosmos.BlobService.Drivers
             var list = new List<string>();
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient(path);
+            var directory = this.shareClient.GetDirectoryClient(path);
             var contents = directory.GetFilesAndDirectoriesAsync();
 
             await foreach (var item in contents)
@@ -254,7 +254,7 @@ namespace Cosmos.BlobService.Drivers
                 if (item.IsDirectory)
                 {
                     var subDirectory = directory.GetSubdirectoryClient(item.Name);
-                    var results = await GetAllBlobsAsync(subDirectory);
+                    var results = await this.GetAllBlobsAsync(subDirectory);
                     list.AddRange(results);
                 }
                 else
@@ -279,7 +279,7 @@ namespace Cosmos.BlobService.Drivers
             }
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient(dirName);
+            var directory = this.shareClient.GetDirectoryClient(dirName);
             var file = directory.GetFileClient(fileName);
             var props = await file.GetPropertiesAsync();
 
@@ -317,7 +317,7 @@ namespace Cosmos.BlobService.Drivers
             var dirName = Path.GetDirectoryName(target).Replace("\\", "/");
             var fileName = Path.GetFileName(target);
 
-            var directory = shareClient.GetDirectoryClient(dirName);
+            var directory = this.shareClient.GetDirectoryClient(dirName);
 
             if (!await directory.ExistsAsync())
             {
@@ -365,7 +365,7 @@ namespace Cosmos.BlobService.Drivers
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<FileManagerEntry> GetObjectAsync(string path)
         {
-            var item = shareClient.GetDirectoryClient(path);
+            var item = this.shareClient.GetDirectoryClient(path);
 
             if (await item.ExistsAsync())
             {
@@ -403,11 +403,11 @@ namespace Cosmos.BlobService.Drivers
             if (string.IsNullOrEmpty(folder))
             {
                 // This might be a root file
-                dir = shareClient.GetRootDirectoryClient();
+                dir = this.shareClient.GetRootDirectoryClient();
             }
             else
             {
-                dir = shareClient.GetDirectoryClient(folder);
+                dir = this.shareClient.GetDirectoryClient(folder);
             }
 
             var file = dir.GetFileClient(Path.GetFileName(path));
@@ -450,7 +450,7 @@ namespace Cosmos.BlobService.Drivers
             var items = new List<FileManagerEntry>();
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient($"/{path}");
+            var directory = this.shareClient.GetDirectoryClient($"/{path}");
             if (await directory.ExistsAsync())
             {
                 var contents = directory.GetFilesAndDirectoriesAsync();
@@ -543,7 +543,7 @@ namespace Cosmos.BlobService.Drivers
             var dirName = Path.GetDirectoryName($"/{target}");
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetRootDirectoryClient();
+            var directory = this.shareClient.GetRootDirectoryClient();
 
             var file = directory.GetFileClient(target);
 
@@ -562,7 +562,7 @@ namespace Cosmos.BlobService.Drivers
             var dirName = Path.GetDirectoryName(fileMetaData.RelativePath);
 
             // Get a reference to a directory and create it
-            var directory = shareClient.GetDirectoryClient(dirName);
+            var directory = this.shareClient.GetDirectoryClient(dirName);
 
             // Create if not exists
             await directory.CreateIfNotExistsAsync();
@@ -599,24 +599,24 @@ namespace Cosmos.BlobService.Drivers
                 throw new Exception("The source and destination cannot be the same.");
             }
 
-            var destObject = await GetObjectAsync(destinationFolderPath);
+            var destObject = await this.GetObjectAsync(destinationFolderPath);
 
             if (!destObject.IsDirectory)
             {
                 throw new Exception("Destination needs to be a folder");
             }
 
-            var sourceObject = await GetObjectAsync(sourcePath);
+            var sourceObject = await this.GetObjectAsync(sourcePath);
 
             if (sourceObject.IsDirectory)
             {
-                var sourceDirectory = shareClient.GetDirectoryClient(sourcePath);
+                var sourceDirectory = this.shareClient.GetDirectoryClient(sourcePath);
                 var destPath = destinationFolderPath + "/" + sourceDirectory.Name;
                 await sourceDirectory.RenameAsync(destPath);
             }
             else
             {
-                var root = shareClient.GetRootDirectoryClient();
+                var root = this.shareClient.GetRootDirectoryClient();
                 var sourceFile = root.GetFileClient(sourcePath);
                 await sourceFile.RenameAsync(destinationFolderPath + "/" + sourceFile.Name);
             }
@@ -637,7 +637,7 @@ namespace Cosmos.BlobService.Drivers
 
             if (path.Count > 0)
             {
-                await CreateSubDirectory(client, path);
+                await this.CreateSubDirectory(client, path);
             }
         }
 
@@ -648,7 +648,7 @@ namespace Cosmos.BlobService.Drivers
                 if (item.IsDirectory)
                 {
                     var subDir = dirClient.GetSubdirectoryClient(item.Name);
-                    await DeleteAllAsync(subDir);
+                    await this.DeleteAllAsync(subDir);
                 }
                 else
                 {
@@ -673,7 +673,7 @@ namespace Cosmos.BlobService.Drivers
                 if (item.IsDirectory)
                 {
                     var subDir = dirClient.GetSubdirectoryClient(item.Name);
-                    list.AddRange(await GetAllBlobsAsync(subDir));
+                    list.AddRange(await this.GetAllBlobsAsync(subDir));
                 }
                 else
                 {

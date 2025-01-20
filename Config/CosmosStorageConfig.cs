@@ -19,7 +19,7 @@ namespace Cosmos.BlobService.Config
         /// </summary>
         public CosmosStorageConfig()
         {
-            StorageConfig = new StorageConfig();
+            this.StorageConfig = new StorageConfig();
         }
 
         /// <summary>

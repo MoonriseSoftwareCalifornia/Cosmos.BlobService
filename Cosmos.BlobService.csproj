@@ -2,17 +2,17 @@
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
-		<AssemblyVersion>9.0.0.5</AssemblyVersion>
-		<FileVersion>9.0.0.5</FileVersion>
-		<Version>9.0.0.5</Version>
+		<AssemblyVersion>9.0.1.0</AssemblyVersion>
+		<FileVersion>9.0.1.0</FileVersion>
+		<Version>9.0.1.0</Version>
 		<Title>Cosmos CMS Azure Storage Provider</Title>
 		<Authors>toiyabe62</Authors>
 		<Company>Moonrise Software LLC</Company>
 		<Description>Manages BLOB objects in Azure.</Description>
 		<Copyright>Moonrise Software LLC</Copyright>
-		<PackageProjectUrl>https://www.moonrise.net</PackageProjectUrl>
+		<PackageProjectUrl>https://cosmos.moonrise.net</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
-		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReleaseNotes></PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -26,6 +26,12 @@
 
 	<PropertyGroup>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+		<PackageIcon>B2C_BrandIcon_Black.png</PackageIcon>
+		<RepositoryUrl>https://github.com/MoonriseSoftwareCalifornia/Cosmos.BlobService</RepositoryUrl>
+		<PackageTags>Azure Storage;Azure Blob Storage;Blob Storage</PackageTags>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<IncludeSymbols>True</IncludeSymbols>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -33,12 +39,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" Version="1.13.1" />
+		<PackageReference Include="Azure.Identity" Version="1.13.2" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
 		<PackageReference Include="Azure.Storage.Files.Shares" Version="12.21.0" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.1" />
 		<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -46,6 +52,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="B2C_BrandIcon_Black.png">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 		<None Update="Readme.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
