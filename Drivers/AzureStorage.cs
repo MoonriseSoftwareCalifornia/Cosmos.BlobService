@@ -7,13 +7,6 @@
 
 namespace Cosmos.BlobService.Drivers
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Runtime.CompilerServices;
-    using System.Text;
-    using System.Threading.Tasks;
     using Azure;
     using Azure.Identity;
     using Azure.Storage.Blobs;
@@ -21,7 +14,12 @@ namespace Cosmos.BlobService.Drivers
     using Azure.Storage.Blobs.Specialized;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Models;
-    using static System.Net.Mime.MediaTypeNames;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
     ///     Azure blob storage driver.
@@ -31,6 +29,7 @@ namespace Cosmos.BlobService.Drivers
         private readonly string containerName;
         private readonly BlobServiceClient blobServiceClient;
         private readonly bool usesAzureDefaultCredential;
+        private readonly int maxCacheSeconds;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureStorage"/> class.
@@ -38,9 +37,12 @@ namespace Cosmos.BlobService.Drivers
         /// <param name="config">Storage configuration as a <see cref="AzureStorageConfig"/>.</param>
         /// <param name="containerName">Name of container (default is $web).</param>
         /// <param name="defaultAzureCredential">Default azure credential.</param>
-        public AzureStorage(AzureStorageConfig config, DefaultAzureCredential defaultAzureCredential, string containerName = "$web")
+        /// <param name="maxCacheSeconds">Maximum cache seconds (default is 3600).</param>
+        public AzureStorage(AzureStorageConfig config, DefaultAzureCredential defaultAzureCredential, string containerName = "$web", int maxCacheSeconds = 3600)
         {
             this.containerName = containerName;
+            this.maxCacheSeconds = maxCacheSeconds;
+
             var conparts = config.AzureBlobStorageConnectionString.Split(';');
             var conpartsDict = conparts.Where(w => !string.IsNullOrEmpty(w)).Select(part => part.Split('=')).ToDictionary(sp => sp[0], sp => sp[1], StringComparer.OrdinalIgnoreCase);
 
@@ -101,7 +103,8 @@ namespace Cosmos.BlobService.Drivers
                 var headers = new BlobHttpHeaders
                 {
                     // Set the MIME ContentType every time the properties are updated or the field will be cleared.
-                    ContentType = Utilities.GetContentType(fileMetaData)
+                    ContentType = Utilities.GetContentType(fileMetaData),
+                    CacheControl = $"max-age={this.maxCacheSeconds}, must-revalidate"
                 };
 
                 await appendClient.CreateIfNotExistsAsync(headers);
