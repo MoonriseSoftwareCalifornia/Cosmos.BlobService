@@ -25,7 +25,7 @@ namespace Cosmos.BlobService.Config
         /// <summary>
         ///    Gets or sets the maximum cache seconds.
         /// </summary>
-        public int MaxCacheSeconds { get; set; } = 3600
+        public int MaxCacheSeconds { get; set; } = 3600;
 
         /// <summary>
         ///     Gets or sets primary cloud for this installation.
