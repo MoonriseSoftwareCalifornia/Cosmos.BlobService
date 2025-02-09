@@ -104,7 +104,7 @@ namespace Cosmos.BlobService.Drivers
                 {
                     // Set the MIME ContentType every time the properties are updated or the field will be cleared.
                     ContentType = Utilities.GetContentType(fileMetaData),
-                    CacheControl = $"max-age={this.maxCacheSeconds}, must-revalidate"
+                    CacheControl = fileMetaData.CacheControl,
                 };
 
                 await appendClient.CreateIfNotExistsAsync(headers);

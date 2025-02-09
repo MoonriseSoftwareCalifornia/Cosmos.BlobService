@@ -56,5 +56,11 @@ namespace Cosmos.BlobService.Models
         /// Gets or sets the image height.
         /// </summary>
         public string ImageHeight { get; set; } = string.Empty;
-    }
+
+        /// <summary>
+        /// Gets or sets the cache control (ie CACHE-CONTROL) string.
+        /// </summary>
+        /// <remarks>Defaults to "max-age=3600, must-revalidate".</remarks>
+        public string CacheControl { get; set; } = "max-age=3600, must-revalidate";
+}
 }
