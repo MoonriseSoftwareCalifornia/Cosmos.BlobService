@@ -7,6 +7,12 @@
 
 namespace Cosmos.BlobService.Drivers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using Azure;
     using Azure.Identity;
     using Azure.Storage.Blobs;
@@ -14,12 +20,6 @@ namespace Cosmos.BlobService.Drivers
     using Azure.Storage.Blobs.Specialized;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Models;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     ///     Azure blob storage driver.
@@ -279,8 +279,9 @@ namespace Cosmos.BlobService.Drivers
         /// <summary>
         /// Enables the static website and sets default CORS rule.
         /// </summary>
+        /// <param name="indexDocument">Index document (default is index.html).</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task EnableStaticWebsite()
+        public async Task EnableStaticWebsite(string indexDocument = "index.html")
         {
             if (this.usesAzureDefaultCredential)
             {
@@ -292,6 +293,13 @@ namespace Cosmos.BlobService.Drivers
             if (!properties.StaticWebsite.Enabled)
             {
                 properties.StaticWebsite.Enabled = true;
+                properties.StaticWebsite.IndexDocument = indexDocument;
+                await this.blobServiceClient.SetPropertiesAsync(properties);
+            }
+
+            if (!properties.StaticWebsite.IndexDocument.Equals(indexDocument, StringComparison.OrdinalIgnoreCase))
+            {
+                properties.StaticWebsite.IndexDocument = indexDocument;
                 await this.blobServiceClient.SetPropertiesAsync(properties);
             }
 
