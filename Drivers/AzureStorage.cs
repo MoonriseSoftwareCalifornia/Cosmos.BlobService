@@ -274,6 +274,11 @@ namespace Cosmos.BlobService.Drivers
         {
             var containerClient = this.blobServiceClient.GetBlobContainerClient(this.containerName);
             await containerClient.DeleteBlobIfExistsAsync(path, DeleteSnapshotsOption.IncludeSnapshots);
+            var extension = Path.GetExtension(path);
+            if (Utilities.ImageThumbnailTypes.Contains(extension))
+            {
+                await containerClient.DeleteBlobIfExistsAsync(path + ".tn", DeleteSnapshotsOption.IncludeSnapshots);
+            }
         }
 
         /// <summary>
@@ -297,7 +302,7 @@ namespace Cosmos.BlobService.Drivers
                 await this.blobServiceClient.SetPropertiesAsync(properties);
             }
 
-            if (!properties.StaticWebsite.IndexDocument.Equals(indexDocument, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(properties.StaticWebsite.IndexDocument) || !properties.StaticWebsite.IndexDocument.Equals(indexDocument, StringComparison.OrdinalIgnoreCase))
             {
                 properties.StaticWebsite.IndexDocument = indexDocument;
                 await this.blobServiceClient.SetPropertiesAsync(properties);
@@ -510,6 +515,16 @@ namespace Cosmos.BlobService.Drivers
                 this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             return containerClient.GetAppendBlobClient(path);
+        }
+
+        /// <summary>
+        ///    Gets a thumbnail image stream.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public Task<Stream> GetImageThumbnailStreamAsync(string target)
+        {
+            throw new NotImplementedException();
         }
     }
 }
