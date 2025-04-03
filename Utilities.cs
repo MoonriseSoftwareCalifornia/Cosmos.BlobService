@@ -18,6 +18,11 @@ namespace Cosmos.BlobService
     public static class Utilities
     {
         /// <summary>
+        ///    Gets a list of image types with auto generated thumbnails.
+        /// </summary>
+        public static string[] ImageThumbnailTypes = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
+
+        /// <summary>
         ///     Gets the content type of an uploaded file.
         /// </summary>
         /// <param name="fileMetaData">File metadata to processes.</param>
