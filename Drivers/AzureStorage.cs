@@ -20,6 +20,8 @@ namespace Cosmos.BlobService.Drivers
     using Azure.Storage.Blobs.Specialized;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Models;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Options;
 
     /// <summary>
     ///     Azure blob storage driver.
@@ -30,6 +32,18 @@ namespace Cosmos.BlobService.Drivers
         private readonly BlobServiceClient blobServiceClient;
         private readonly bool usesAzureDefaultCredential;
         private readonly int maxCacheSeconds;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureStorage"/> class.
+        /// </summary>
+        /// <param name="services">Services provider.</param>
+        /// <param name="isMultiTenant">Is multitenant editor.</param>
+        public AzureStorage(IServiceProvider services, bool isMultiTenant)
+        {
+            var connectionStringProvider = services.GetRequiredService<IConnectionStringProvider>();
+            var connectionString =
+                connectionStringProvider.GetDatabaseConnectionStringByDomain();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureStorage"/> class.

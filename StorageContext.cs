@@ -51,7 +51,11 @@ namespace Cosmos.BlobService
         /// <param name="cosmosConfig">Storage context configuration as a <see cref="CosmosStorageConfig"/>.</param>
         /// <param name="cache"><see cref="IMemoryCache"/> used by context.</param>
         /// <param name="defaultAzureCredential">Default Azure Credential.</param>
-        public StorageContext(IOptions<CosmosStorageConfig> cosmosConfig, IMemoryCache cache, DefaultAzureCredential defaultAzureCredential)
+        public StorageContext(
+            IOptions<CosmosStorageConfig> cosmosConfig,
+            IMemoryCache cache,
+            DefaultAzureCredential defaultAzureCredential,
+            IServiceProvider services)
         {
             this.containerName = cosmosConfig.Value.StorageConfig.AzureConfigs.FirstOrDefault().AzureBlobStorageContainerName;
             this.config = cosmosConfig;
