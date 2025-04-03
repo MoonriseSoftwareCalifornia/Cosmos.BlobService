@@ -18,6 +18,7 @@ namespace Cosmos.BlobService
     using Cosmos.BlobService.Drivers;
     using Cosmos.BlobService.Models;
     using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Options;
 
     /// <summary>
@@ -36,14 +37,24 @@ namespace Cosmos.BlobService
         private readonly DefaultAzureCredential credential;
 
         /// <summary>
+        /// Service provider.
+        /// </summary>
+        private readonly IServiceProvider services;
+
+        /// <summary>
+        /// Multi-tenant editor flag.
+        /// </summary>
+        private readonly bool? isMultiTenant;
+
+        /// <summary>
+        /// Configuration.
+        /// </summary>
+        private readonly IConfiguration configuration;
+
+        /// <summary>
         /// Used to brefly store chuk data while uploading.
         /// </summary>
         private readonly IMemoryCache memoryCache;
-
-        /// <summary>
-        /// Gets or sets azure container being connected to.
-        /// </summary>
-        private string containerName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageContext"/> class.
@@ -51,12 +62,21 @@ namespace Cosmos.BlobService
         /// <param name="cosmosConfig">Storage context configuration as a <see cref="CosmosStorageConfig"/>.</param>
         /// <param name="cache"><see cref="IMemoryCache"/> used by context.</param>
         /// <param name="defaultAzureCredential">Default Azure Credential.</param>
-        public StorageContext(IOptions<CosmosStorageConfig> cosmosConfig, IMemoryCache cache, DefaultAzureCredential defaultAzureCredential)
+        /// <param name="services">Service provider.</param>
+        /// <param name="configuration">Configuration.</param>
+        public StorageContext(
+            IOptions<CosmosStorageConfig> cosmosConfig,
+            IMemoryCache cache,
+            DefaultAzureCredential defaultAzureCredential,
+            IServiceProvider services,
+            IConfiguration configuration)
         {
-            this.containerName = cosmosConfig.Value.StorageConfig.AzureConfigs.FirstOrDefault().AzureBlobStorageContainerName;
             this.config = cosmosConfig;
             this.memoryCache = cache;
             this.credential = defaultAzureCredential;
+            this.isMultiTenant = configuration.GetValue<bool>("MultiTenantEditor");
+            this.services = services;
+            this.configuration = configuration;
         }
 
         /// <summary>
@@ -97,15 +117,6 @@ namespace Cosmos.BlobService
         {
             var driver = this.GetPrimaryDriver();
             return await driver.BlobExistsAsync(path);
-        }
-
-        /// <summary>
-        /// Changes the default container name.
-        /// </summary>
-        /// <param name="name">The name of the container.</param>
-        public void SetContainerName(string name)
-        {
-            this.containerName = name;
         }
 
         /// <summary>
@@ -591,7 +602,11 @@ namespace Cosmos.BlobService
 
         private ICosmosStorage GetPrimaryDriver()
         {
-            return new AzureStorage(this.config.Value.StorageConfig.AzureConfigs.FirstOrDefault(), this.credential, this.containerName);
+            if (this.isMultiTenant == true)
+            {
+                return new AzureStorage(this.services, this.credential, this.isMultiTenant ?? false);
+            }
+            return new AzureStorage(this.config.Value.StorageConfig.AzureConfigs.FirstOrDefault(), this.credential);
         }
 
         private string[] ParseFirstFolder(string path)
@@ -600,19 +615,36 @@ namespace Cosmos.BlobService
             return parts;
         }
 
+        /// <summary>
+        ///    Gets the blob names by path.
+        /// </summary>
+        /// <param name="path">Path.</param>
+        /// <param name="filter">Search filter.</param>
+        /// <returns>List of blob names.</returns>
         private async Task<List<string>> GetBlobNamesByPath(string path, string[] filter = null)
         {
             var primaryDriver = this.GetPrimaryDriver();
             return await primaryDriver.GetBlobNamesByPath(path, filter);
         }
 
+        /// <summary>
+        /// Gets the drivers.
+        /// </summary>
+        /// <returns>ICosmosStorage.</returns>
         private List<ICosmosStorage> GetDrivers()
         {
             var drivers = new List<ICosmosStorage>();
 
-            foreach (var storageConfigAzureConfig in this.config.Value.StorageConfig.AzureConfigs)
+            if (this.isMultiTenant == true)
             {
-                drivers.Add(new AzureStorage(storageConfigAzureConfig, this.credential, this.containerName));
+                drivers.Add(new AzureStorage(this.services, this.credential, this.isMultiTenant ?? false));
+            }
+            else
+            {
+                foreach (var storageConfigAzureConfig in this.config.Value.StorageConfig.AzureConfigs)
+                {
+                    drivers.Add(new AzureStorage(storageConfigAzureConfig, this.credential));
+                }
             }
 
             return drivers;

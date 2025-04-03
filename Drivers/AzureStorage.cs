@@ -20,48 +20,45 @@ namespace Cosmos.BlobService.Drivers
     using Azure.Storage.Blobs.Specialized;
     using Cosmos.BlobService.Config;
     using Cosmos.BlobService.Models;
+    using Cosmos.ConnectionStrings;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     ///     Azure blob storage driver.
     /// </summary>
     public sealed class AzureStorage : ICosmosStorage
     {
-        private readonly string containerName;
-        private readonly BlobServiceClient blobServiceClient;
-        private readonly bool usesAzureDefaultCredential;
-        private readonly int maxCacheSeconds;
+        private string containerName;
+        private BlobServiceClient blobServiceClient;
+        private bool usesAzureDefaultCredential; // Requred for enabling static website.
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureStorage"/> class.
+        /// </summary>
+        /// <param name="services">Services provider.</param>
+        /// <param name="defaultAzureCredential">Default azure credential.</param>
+        /// <param name="isMultiTenant">Is multitenant configuration.</param>
+        /// <param name="containerName">Name of container (default is $web).</param>
+        public AzureStorage(IServiceProvider services, DefaultAzureCredential defaultAzureCredential, bool isMultiTenant, string containerName = "$web")
+        {
+            var connectionStringProvider = services.GetRequiredService<IConnectionStringProvider>();
+
+            var connectionString = isMultiTenant ?
+                connectionStringProvider.GetStorageConnectionStringByDomain() :
+                connectionStringProvider.GetConnectionStringByName("AzureBlobStorageConnectionString");
+
+            this.Initialize(containerName, connectionString, defaultAzureCredential);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureStorage"/> class.
         /// </summary>
         /// <param name="config">Storage configuration as a <see cref="AzureStorageConfig"/>.</param>
-        /// <param name="containerName">Name of container (default is $web).</param>
         /// <param name="defaultAzureCredential">Default azure credential.</param>
-        /// <param name="maxCacheSeconds">Maximum cache seconds (default is 3600).</param>
-        public AzureStorage(AzureStorageConfig config, DefaultAzureCredential defaultAzureCredential, string containerName = "$web", int maxCacheSeconds = 3600)
+        /// <param name="containerName">Name of container (default is $web).</param>
+        public AzureStorage(AzureStorageConfig config, DefaultAzureCredential defaultAzureCredential, string containerName = "$web")
         {
-            this.containerName = containerName;
-            this.maxCacheSeconds = maxCacheSeconds;
-
-            var conparts = config.AzureBlobStorageConnectionString.Split(';');
-            var conpartsDict = conparts.Where(w => !string.IsNullOrEmpty(w)).Select(part => part.Split('=')).ToDictionary(sp => sp[0], sp => sp[1], StringComparer.OrdinalIgnoreCase);
-
-            if (!conpartsDict.ContainsKey("AccountKey"))
-            {
-                throw new ArgumentException("Azure Blob Storage connection string is missing AccountKey.");
-            }
-
-            if (conpartsDict["AccountKey"] == "AccessToken")
-            {
-                this.usesAzureDefaultCredential = true;
-                var accountName = conpartsDict["AccountName"];
-                this.blobServiceClient = new BlobServiceClient(new Uri($"https://{accountName}.blob.core.windows.net/"), defaultAzureCredential);
-            }
-            else
-            {
-                this.usesAzureDefaultCredential = false;
-                this.blobServiceClient = new BlobServiceClient(config.AzureBlobStorageConnectionString);
-            }
+            this.Initialize(containerName, config.AzureBlobStorageConnectionString, defaultAzureCredential);
         }
 
         /// <summary>
@@ -510,6 +507,29 @@ namespace Cosmos.BlobService.Drivers
                 this.blobServiceClient.GetBlobContainerClient(this.containerName);
 
             return containerClient.GetAppendBlobClient(path);
+        }
+
+        /// <summary>
+        /// Initializes the instance.
+        /// </summary>
+        /// <param name="containerName">Container name.</param>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="defaultAzureCredential">Azure default credential.</param>
+        private void Initialize(string containerName, string connectionString, DefaultAzureCredential defaultAzureCredential)
+        {
+            this.containerName = containerName;
+            if (connectionString.Contains("AccountKey=AccessToken", StringComparison.CurrentCultureIgnoreCase))
+            {
+                var conpartsDict = connectionString.Split(';').Where(w => !string.IsNullOrEmpty(w)).Select(part => part.Split('=')).ToDictionary(sp => sp[0], sp => sp[1], StringComparer.OrdinalIgnoreCase);
+
+                this.usesAzureDefaultCredential = true;
+                this.blobServiceClient = new BlobServiceClient(new Uri($"https://{conpartsDict["AccountName"]}.blob.core.windows.net/"), defaultAzureCredential);
+            }
+            else
+            {
+                this.usesAzureDefaultCredential = false;
+                this.blobServiceClient = new BlobServiceClient(connectionString);
+            }
         }
     }
 }

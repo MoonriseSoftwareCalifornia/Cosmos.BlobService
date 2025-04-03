@@ -40,8 +40,10 @@ namespace Cosmos.BlobService
             var azureBlobStorageEndPoint = GetKeyValue(config, "AzureBlobStorageEndPoint");
 
             var cosmosConfig = new CosmosStorageConfig();
+
             cosmosConfig.PrimaryCloud = "azure";
             cosmosConfig.StorageConfig = new StorageConfig();
+
             if (string.IsNullOrEmpty(azureBlobStorageContainerName))
             {
                 azureBlobStorageContainerName = "$web";
@@ -57,11 +59,6 @@ namespace Cosmos.BlobService
                     AzureBlobStorageContainerName = azureBlobStorageContainerName,
                     AzureBlobStorageEndPoint = azureBlobStorageEndPoint
                 });
-            }
-
-            if (cosmosConfig.StorageConfig.AzureConfigs.Count == 0)
-            {
-                throw new ArgumentException("AWS or Azure storage connection not found.");
             }
 
             services.AddSingleton(Options.Create(cosmosConfig));
