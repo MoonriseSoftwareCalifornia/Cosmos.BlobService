@@ -684,5 +684,10 @@ namespace Cosmos.BlobService.Drivers
 
             return list;
         }
+
+        public Task<Stream> GetImageThumbnailStreamAsync(string target)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -79,6 +79,13 @@ namespace Cosmos.BlobService.Drivers
         Task<List<string>> GetBlobNamesByPath(string path, string[] filter = null);
 
         /// <summary>
+        /// Opens a read stream from the blob in storage.
+        /// </summary>
+        /// <param name="target">Path to blob to read.</param>
+        /// <returns>A <see cref="Stream"/> from the blob.</returns>
+        Task<Stream> GetImageThumbnailStreamAsync(string target);
+
+        /// <summary>
         /// Gets an inventory of all blobs in a storage account.
         /// </summary>
         /// <returns>A <see cref="Task"/> with a list of files as a <see cref="List{T}"/>.</returns>
